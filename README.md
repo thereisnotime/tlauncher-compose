@@ -27,7 +27,7 @@ A Python wrapper with graphical interface and automatic detection.
 ./minecraft.py start    # Or use terminal
 
 # Add to application menu:
-./install-desktop.sh
+./create-shortcut.sh
 ```
 
 **Features:**
@@ -139,11 +139,23 @@ docker build -t tlauncher-java .
 
 **4. Set up X server (VcXsrv or Xming):** See detailed guide below.
 
-**5. Launch:**
+**5. Set DISPLAY variable:**
 
 ```bash
 export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):0
+```
+
+**6. Launch:**
+
+```bash
 ./minecraft.py
+```
+
+**Optional: Create Windows desktop shortcut:**
+
+```powershell
+# From PowerShell (run as Administrator):
+.\create-shortcut.ps1
 ```
 
 👉 **Detailed guide:** [SETUP-WINDOWS.md](SETUP-WINDOWS.md)
