@@ -15,8 +15,9 @@ Usage:
     ./minecraft.py doctor          # Check system
     ./minecraft.py --no-gui start  # Force CLI mode
 """
-import sys
+
 import os
+import sys
 
 
 def should_use_gui() -> bool:
@@ -36,7 +37,7 @@ def should_use_gui() -> bool:
         bool: True for GUI mode, False for CLI mode
     """
     # Force CLI if --no-gui flag
-    if '--no-gui' in sys.argv:
+    if "--no-gui" in sys.argv:
         return False
 
     # CLI mode if any other arguments passed
@@ -44,10 +45,11 @@ def should_use_gui() -> bool:
         return False
 
     # Check if display is available
-    if os.environ.get('DISPLAY') or sys.platform == 'win32':
+    if os.environ.get("DISPLAY") or sys.platform == "win32":
         # GUI mode possible, check if tkinter is available
         try:
-            import tkinter
+            import tkinter  # noqa: F401
+
             return True
         except ImportError:
             # Tkinter not available, fall back to CLI
@@ -63,6 +65,7 @@ def main():
         # Launch GUI mode
         try:
             from gui import MinecraftLauncherGUI
+
             app = MinecraftLauncherGUI()
             app.run()
         except ImportError as e:
@@ -80,10 +83,11 @@ def main():
 def launch_cli():
     """Launch CLI mode with argument parsing."""
     import argparse
+
     from cli import run_cli
 
     parser = argparse.ArgumentParser(
-        description='Minecraft Launcher - Containerized TLauncher with auto-detection',
+        description="Minecraft Launcher - Containerized TLauncher with auto-detection",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -97,55 +101,61 @@ Examples:
   %(prog)s profiles export MC02     Export profile to ZIP file
   %(prog)s profiles import file.zip Import profile from ZIP file
   %(prog)s --no-gui start           Force CLI mode (skip GUI)
-        """
+        """,
     )
 
     # Subcommands
     parser.add_argument(
-        'command',
-        nargs='?',
-        default='start',
-        choices=['start', 'stop', 'restart', 'logs', 'status', 'doctor', 'stats', 'profiles'],
-        help='Command to execute (default: start)'
+        "command",
+        nargs="?",
+        default="start",
+        choices=["start", "stop", "restart", "logs", "status", "doctor", "stats", "profiles"],
+        help="Command to execute (default: start)",
     )
 
     # Profile subcommand (for profiles list/export/import/delete)
     parser.add_argument(
-        'profile_action',
-        nargs='?',
-        help='Profile action: list, export, import, delete'
+        "profile_action", nargs="?", help="Profile action: list, export, import, delete"
     )
 
     # Profile name or file argument
     parser.add_argument(
-        'profile_arg',
-        nargs='?',
-        help='Profile name (for export/delete) or ZIP file path (for import)'
+        "profile_arg",
+        nargs="?",
+        help="Profile name (for export/delete) or ZIP file path (for import)",
     )
 
     # Configuration overrides
-    parser.add_argument('--runtime', choices=['podman', 'docker'],
-                        help='Override runtime detection')
-    parser.add_argument('--gpu', choices=['nvidia', 'amd'],
-                        help='Override GPU detection')
-    parser.add_argument('--display', choices=['x11', 'wayland'],
-                        help='Override display server detection')
-    parser.add_argument('--audio', choices=['pulseaudio', 'none'],
-                        help='Override audio system detection')
+    parser.add_argument(
+        "--runtime", choices=["podman", "docker"], help="Override runtime detection"
+    )
+    parser.add_argument("--gpu", choices=["nvidia", "amd"], help="Override GPU detection")
+    parser.add_argument(
+        "--display", choices=["x11", "wayland"], help="Override display server detection"
+    )
+    parser.add_argument(
+        "--audio", choices=["pulseaudio", "none"], help="Override audio system detection"
+    )
 
     # Behavior flags
-    parser.add_argument('--detached', '-d', action='store_true',
-                        help='Run container in background (for start command)')
-    parser.add_argument('--force-recreate', action='store_true',
-                        help='Force recreate containers (for start command)')
-    parser.add_argument('--follow', '-f', action='store_true',
-                        help='Follow log output (for logs command)')
-    parser.add_argument('--yes', '-y', action='store_true',
-                        help='Skip confirmation prompts')
+    parser.add_argument(
+        "--detached",
+        "-d",
+        action="store_true",
+        help="Run container in background (for start command)",
+    )
+    parser.add_argument(
+        "--force-recreate",
+        action="store_true",
+        help="Force recreate containers (for start command)",
+    )
+    parser.add_argument(
+        "--follow", "-f", action="store_true", help="Follow log output (for logs command)"
+    )
+    parser.add_argument("--yes", "-y", action="store_true", help="Skip confirmation prompts")
 
     # Mode selection
-    parser.add_argument('--no-gui', action='store_true',
-                        help='Force CLI mode (disable GUI)')
+    parser.add_argument("--no-gui", action="store_true", help="Force CLI mode (disable GUI)")
 
     args = parser.parse_args()
 
@@ -160,5 +170,5 @@ Examples:
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

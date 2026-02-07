@@ -28,15 +28,7 @@ jobs:
 
     - name: Validate Compose files
       run: |
-        # Set dummy environment variables for validation
-        export DISPLAY=:0
-        export XAUTHORITY=/tmp/.Xauthority
-        export USER=testuser
-
-        # Test compose file syntax
-        docker compose -f compose.base.yaml config > /dev/null
-        docker compose -f compose.base.yaml -f compose.docker.yaml -f compose.nvidia.yaml -f compose.x11.yaml -f compose.audio-pulseaudio.yaml config > /dev/null
-        echo "✓ Compose files validated"
+        make validate-compose
 
   build-podman:
     name: Build with Podman
@@ -93,8 +85,4 @@ jobs:
 
     - name: Verify Python syntax
       run: |
-        python3 -m py_compile minecraft.py
-        python3 -m py_compile gui.py
-        python3 -m py_compile cli.py
-        python3 -m py_compile core/*.py
-        echo "✓ Python syntax valid"
+        make test

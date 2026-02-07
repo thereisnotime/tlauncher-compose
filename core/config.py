@@ -2,15 +2,15 @@
 Configuration management module for Minecraft Launcher.
 Handles loading, saving, and merging user preferences.
 """
-import os
+
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
+
 import yaml
 
-
 # Configuration file location
-CONFIG_DIR = Path.home() / '.config' / 'minecraft-launcher'
-CONFIG_FILE = CONFIG_DIR / 'config.yaml'
+CONFIG_DIR = Path.home() / ".config" / "minecraft-launcher"
+CONFIG_FILE = CONFIG_DIR / "config.yaml"
 
 
 def load_config() -> Dict[str, str]:
@@ -24,15 +24,15 @@ def load_config() -> Dict[str, str]:
         return {}
 
     try:
-        with open(CONFIG_FILE, 'r') as f:
+        with open(CONFIG_FILE) as f:
             config = yaml.safe_load(f) or {}
             # Ensure all expected keys exist with empty string defaults
             return {
-                'runtime': config.get('runtime', ''),
-                'gpu': config.get('gpu', ''),
-                'display': config.get('display', ''),
-                'audio': config.get('audio', ''),
-                'auto_xhost': config.get('auto_xhost', True)
+                "runtime": config.get("runtime", ""),
+                "gpu": config.get("gpu", ""),
+                "display": config.get("display", ""),
+                "audio": config.get("audio", ""),
+                "auto_xhost": config.get("auto_xhost", True),
             }
     except Exception as e:
         print(f"Warning: Could not load config file: {e}")
@@ -55,14 +55,14 @@ def save_config(config: Dict[str, any]) -> bool:
 
         # Filter out None values and convert to save format
         save_data = {
-            'runtime': config.get('runtime', ''),
-            'gpu': config.get('gpu', ''),
-            'display': config.get('display', ''),
-            'audio': config.get('audio', ''),
-            'auto_xhost': config.get('auto_xhost', True)
+            "runtime": config.get("runtime", ""),
+            "gpu": config.get("gpu", ""),
+            "display": config.get("display", ""),
+            "audio": config.get("audio", ""),
+            "auto_xhost": config.get("auto_xhost", True),
         }
 
-        with open(CONFIG_FILE, 'w') as f:
+        with open(CONFIG_FILE, "w") as f:
             yaml.dump(save_data, f, default_flow_style=False)
 
         return True
@@ -86,13 +86,13 @@ def merge_config(detected: Dict[str, str], saved: Dict[str, str]) -> Dict[str, s
     merged = detected.copy()
 
     # Override with saved config if value is not empty
-    for key in ['runtime', 'gpu', 'display', 'audio']:
-        saved_value = saved.get(key, '')
+    for key in ["runtime", "gpu", "display", "audio"]:
+        saved_value = saved.get(key, "")
         if saved_value and saved_value.strip():
             merged[key] = saved_value
 
     # Add auto_xhost setting
-    merged['auto_xhost'] = saved.get('auto_xhost', True)
+    merged["auto_xhost"] = saved.get("auto_xhost", True)
 
     return merged
 
@@ -141,9 +141,9 @@ def create_default_config() -> Dict[str, any]:
         dict: Default configuration
     """
     return {
-        'runtime': '',  # Empty means auto-detect
-        'gpu': '',
-        'display': '',
-        'audio': '',
-        'auto_xhost': True
+        "runtime": "",  # Empty means auto-detect
+        "gpu": "",
+        "display": "",
+        "audio": "",
+        "auto_xhost": True,
     }

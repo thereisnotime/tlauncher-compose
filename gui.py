@@ -2,17 +2,18 @@
 GUI interface for Minecraft Launcher.
 Provides graphical Tkinter-based interaction.
 """
-import tkinter as tk
-from tkinter import ttk, scrolledtext, messagebox
+
 import threading
+import tkinter as tk
 from pathlib import Path
+from tkinter import messagebox, scrolledtext, ttk
 from typing import Dict
 
-from core.detector import detect_system, get_detection_details
-from core.config import load_config, save_config, merge_config
-from core.validator import validate_system, run_xhost_if_needed
-from core.container import start_container_async, ContainerManager
 from core.composer import get_command_preview
+from core.config import load_config, merge_config, save_config
+from core.container import ContainerManager, start_container_async
+from core.detector import detect_system, get_detection_details
+from core.validator import run_xhost_if_needed, validate_system
 
 
 class MinecraftLauncherGUI:
@@ -33,7 +34,9 @@ class MinecraftLauncherGUI:
         self._set_window_icon()
         # WM_CLASS for taskbar/dock (wm_class not available on all Tk builds)
         try:
-            self.window.tk.call("wm", "class", self.window._w, "minecraft-launcher", "MinecraftLauncher")
+            self.window.tk.call(
+                "wm", "class", self.window._w, "minecraft-launcher", "MinecraftLauncher"
+            )
         except (AttributeError, tk.TclError):
             pass
 
@@ -47,6 +50,7 @@ class MinecraftLauncherGUI:
 
         # Get CPU core count for normalizing stats
         import os
+
         self._cpu_cores = os.cpu_count() or 1
 
         self._create_widgets()
@@ -58,70 +62,84 @@ class MinecraftLauncherGUI:
 
         # Try to use a better theme if available
         available_themes = style.theme_names()
-        if 'clam' in available_themes:
-            style.theme_use('clam')
-        elif 'alt' in available_themes:
-            style.theme_use('alt')
+        if "clam" in available_themes:
+            style.theme_use("clam")
+        elif "alt" in available_themes:
+            style.theme_use("alt")
 
         # Custom color scheme - Minecraft-inspired greens and modern grays
-        bg_color = '#2b2b2b'          # Dark gray background
-        fg_color = '#e8e8e8'          # Light text
-        accent_color = '#7cbd3f'      # Minecraft grass green
-        button_bg = '#3d3d3d'         # Button background
-        button_active = '#4a4a4a'     # Button hover
-        frame_bg = '#333333'          # Frame background
+        bg_color = "#2b2b2b"  # Dark gray background
+        fg_color = "#e8e8e8"  # Light text
+        accent_color = "#7cbd3f"  # Minecraft grass green
+        button_bg = "#3d3d3d"  # Button background
+        button_active = "#4a4a4a"  # Button hover
 
         # Configure window background
         self.window.configure(bg=bg_color)
 
         # Configure styles
-        style.configure('TFrame', background=bg_color)
-        style.configure('TLabel', background=bg_color, foreground=fg_color, font=('Segoe UI', 10))
-        style.configure('TLabelframe', background=bg_color, foreground=fg_color, bordercolor=accent_color)
-        style.configure('TLabelframe.Label', background=bg_color, foreground=accent_color, font=('Segoe UI', 10, 'bold'))
+        style.configure("TFrame", background=bg_color)
+        style.configure("TLabel", background=bg_color, foreground=fg_color, font=("Segoe UI", 10))
+        style.configure(
+            "TLabelframe", background=bg_color, foreground=fg_color, bordercolor=accent_color
+        )
+        style.configure(
+            "TLabelframe.Label",
+            background=bg_color,
+            foreground=accent_color,
+            font=("Segoe UI", 10, "bold"),
+        )
 
         # Button styling
-        style.configure('TButton',
-                       background=button_bg,
-                       foreground=fg_color,
-                       bordercolor=accent_color,
-                       focuscolor=accent_color,
-                       font=('Segoe UI', 9),
-                       padding=8)
-        style.map('TButton',
-                 background=[('active', button_active), ('pressed', accent_color)],
-                 foreground=[('active', fg_color)])
+        style.configure(
+            "TButton",
+            background=button_bg,
+            foreground=fg_color,
+            bordercolor=accent_color,
+            focuscolor=accent_color,
+            font=("Segoe UI", 9),
+            padding=8,
+        )
+        style.map(
+            "TButton",
+            background=[("active", button_active), ("pressed", accent_color)],
+            foreground=[("active", fg_color)],
+        )
 
         # Combobox styling
-        style.configure('TCombobox',
-                       fieldbackground=button_bg,
-                       background=button_bg,
-                       foreground=fg_color,
-                       arrowcolor=accent_color,
-                       selectbackground=accent_color,
-                       selectforeground=fg_color)
+        style.configure(
+            "TCombobox",
+            fieldbackground=button_bg,
+            background=button_bg,
+            foreground=fg_color,
+            arrowcolor=accent_color,
+            selectbackground=accent_color,
+            selectforeground=fg_color,
+        )
 
-        style.map('TCombobox',
-                 fieldbackground=[('readonly', button_bg)],
-                 selectbackground=[('readonly', accent_color)],
-                 selectforeground=[('readonly', fg_color)])
+        style.map(
+            "TCombobox",
+            fieldbackground=[("readonly", button_bg)],
+            selectbackground=[("readonly", accent_color)],
+            selectforeground=[("readonly", fg_color)],
+        )
 
         # Configure combobox dropdown listbox colors
-        self.window.option_add('*TCombobox*Listbox.background', button_bg)
-        self.window.option_add('*TCombobox*Listbox.foreground', fg_color)
-        self.window.option_add('*TCombobox*Listbox.selectBackground', accent_color)
-        self.window.option_add('*TCombobox*Listbox.selectForeground', fg_color)
-        self.window.option_add('*TCombobox*Listbox.font', ('Segoe UI', 10))
+        self.window.option_add("*TCombobox*Listbox.background", button_bg)
+        self.window.option_add("*TCombobox*Listbox.foreground", fg_color)
+        self.window.option_add("*TCombobox*Listbox.selectBackground", accent_color)
+        self.window.option_add("*TCombobox*Listbox.selectForeground", fg_color)
+        self.window.option_add("*TCombobox*Listbox.font", ("Segoe UI", 10))
 
         # Configure colors for status labels
         self.colors = {
-            'bg': bg_color,
-            'fg': fg_color,
-            'accent': accent_color,
-            'success': '#4caf50',
-            'warning': '#ff9800',
-            'error': '#f44336',
-            'info': '#2196f3'
+            "bg": bg_color,
+            "fg": fg_color,
+            "accent": accent_color,
+            "success": "#4caf50",
+            "warning": "#ff9800",
+            "error": "#f44336",
+            "info": "#2196f3",
         }
 
     def _set_window_icon(self):
@@ -137,6 +155,7 @@ class MinecraftLauncherGUI:
             try:
                 # Fallback: Pillow if installed
                 from PIL import Image, ImageTk
+
                 img = Image.open(icon_path)
                 self._icon_photo = ImageTk.PhotoImage(img)
                 self.window.iconphoto(True, self._icon_photo)
@@ -166,16 +185,20 @@ class MinecraftLauncherGUI:
         header_frame = ttk.Frame(left_frame)
         header_frame.grid(row=0, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 15))
 
-        title_label = ttk.Label(header_frame,
-                               text="⛏ Minecraft Launcher Launcher",
-                               font=('Segoe UI', 16, 'bold'),
-                               foreground=self.colors['accent'])
+        title_label = ttk.Label(
+            header_frame,
+            text="⛏ Minecraft Launcher Launcher",
+            font=("Segoe UI", 16, "bold"),
+            foreground=self.colors["accent"],
+        )
         title_label.pack(side=tk.LEFT)
 
-        subtitle_label = ttk.Label(header_frame,
-                                   text="Containerized TLauncher",
-                                   font=('Segoe UI', 9),
-                                   foreground=self.colors['fg'])
+        subtitle_label = ttk.Label(
+            header_frame,
+            text="Containerized TLauncher",
+            font=("Segoe UI", 9),
+            foreground=self.colors["fg"],
+        )
         subtitle_label.pack(side=tk.LEFT, padx=(10, 0))
 
         # Configuration Frame - cleaner layout without detected labels
@@ -183,43 +206,75 @@ class MinecraftLauncherGUI:
         detect_frame.grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 12))
 
         # Runtime
-        ttk.Label(detect_frame, text="Runtime:", font=('Segoe UI', 10)).grid(
-            row=0, column=0, sticky=tk.W, padx=(0, 8))
+        ttk.Label(detect_frame, text="Runtime:", font=("Segoe UI", 10)).grid(
+            row=0, column=0, sticky=tk.W, padx=(0, 8)
+        )
         self.runtime_var = tk.StringVar()
-        self.runtime_combo = ttk.Combobox(detect_frame, textvariable=self.runtime_var,
-                                          values=['auto', 'podman', 'docker'], state='readonly', width=14)
+        self.runtime_combo = ttk.Combobox(
+            detect_frame,
+            textvariable=self.runtime_var,
+            values=["auto", "podman", "docker"],
+            state="readonly",
+            width=14,
+        )
         self.runtime_combo.grid(row=0, column=1, sticky=tk.W, padx=(0, 20))
-        self.runtime_status_label = ttk.Label(detect_frame, text="", foreground="gray", font=('Segoe UI', 8))
+        self.runtime_status_label = ttk.Label(
+            detect_frame, text="", foreground="gray", font=("Segoe UI", 8)
+        )
         self.runtime_status_label.grid(row=0, column=2, sticky=tk.W)
 
         # GPU
-        ttk.Label(detect_frame, text="GPU:", font=('Segoe UI', 10)).grid(
-            row=0, column=3, sticky=tk.W, padx=(0, 8))
+        ttk.Label(detect_frame, text="GPU:", font=("Segoe UI", 10)).grid(
+            row=0, column=3, sticky=tk.W, padx=(0, 8)
+        )
         self.gpu_var = tk.StringVar()
-        self.gpu_combo = ttk.Combobox(detect_frame, textvariable=self.gpu_var,
-                                      values=['auto', 'nvidia', 'amd'], state='readonly', width=14)
+        self.gpu_combo = ttk.Combobox(
+            detect_frame,
+            textvariable=self.gpu_var,
+            values=["auto", "nvidia", "amd"],
+            state="readonly",
+            width=14,
+        )
         self.gpu_combo.grid(row=0, column=4, sticky=tk.W, padx=(0, 20))
-        self.gpu_status_label = ttk.Label(detect_frame, text="", foreground="gray", font=('Segoe UI', 8))
+        self.gpu_status_label = ttk.Label(
+            detect_frame, text="", foreground="gray", font=("Segoe UI", 8)
+        )
         self.gpu_status_label.grid(row=0, column=5, sticky=tk.W)
 
         # Display
-        ttk.Label(detect_frame, text="Display:", font=('Segoe UI', 10)).grid(
-            row=1, column=0, sticky=tk.W, padx=(0, 8), pady=(10, 0))
+        ttk.Label(detect_frame, text="Display:", font=("Segoe UI", 10)).grid(
+            row=1, column=0, sticky=tk.W, padx=(0, 8), pady=(10, 0)
+        )
         self.display_var = tk.StringVar()
-        self.display_combo = ttk.Combobox(detect_frame, textvariable=self.display_var,
-                                          values=['auto', 'x11', 'wayland'], state='readonly', width=14)
+        self.display_combo = ttk.Combobox(
+            detect_frame,
+            textvariable=self.display_var,
+            values=["auto", "x11", "wayland"],
+            state="readonly",
+            width=14,
+        )
         self.display_combo.grid(row=1, column=1, sticky=tk.W, pady=(10, 0), padx=(0, 20))
-        self.display_status_label = ttk.Label(detect_frame, text="", foreground="gray", font=('Segoe UI', 8))
+        self.display_status_label = ttk.Label(
+            detect_frame, text="", foreground="gray", font=("Segoe UI", 8)
+        )
         self.display_status_label.grid(row=1, column=2, sticky=tk.W, pady=(10, 0))
 
         # Audio
-        ttk.Label(detect_frame, text="Audio:", font=('Segoe UI', 10)).grid(
-            row=1, column=3, sticky=tk.W, padx=(0, 8), pady=(10, 0))
+        ttk.Label(detect_frame, text="Audio:", font=("Segoe UI", 10)).grid(
+            row=1, column=3, sticky=tk.W, padx=(0, 8), pady=(10, 0)
+        )
         self.audio_var = tk.StringVar()
-        self.audio_combo = ttk.Combobox(detect_frame, textvariable=self.audio_var,
-                                        values=['auto', 'pulseaudio', 'none'], state='readonly', width=14)
+        self.audio_combo = ttk.Combobox(
+            detect_frame,
+            textvariable=self.audio_var,
+            values=["auto", "pulseaudio", "none"],
+            state="readonly",
+            width=14,
+        )
         self.audio_combo.grid(row=1, column=4, sticky=tk.W, pady=(10, 0), padx=(0, 20))
-        self.audio_status_label = ttk.Label(detect_frame, text="", foreground="gray", font=('Segoe UI', 8))
+        self.audio_status_label = ttk.Label(
+            detect_frame, text="", foreground="gray", font=("Segoe UI", 8)
+        )
         self.audio_status_label.grid(row=1, column=5, sticky=tk.W, pady=(10, 0))
 
         detect_frame.columnconfigure(5, weight=1)
@@ -228,24 +283,38 @@ class MinecraftLauncherGUI:
         control_frame = ttk.Frame(left_frame)
         control_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 15))
 
-        self.btn_start = ttk.Button(control_frame, text="Start", command=self.start_minecraft, width=12)
+        self.btn_start = ttk.Button(
+            control_frame, text="Start", command=self.start_minecraft, width=12
+        )
         self.btn_start.pack(side=tk.LEFT, padx=(0, 5))
 
-        self.btn_stop = ttk.Button(control_frame, text="Stop", command=self.stop_minecraft,
-                                    state=tk.DISABLED, width=12)
+        self.btn_stop = ttk.Button(
+            control_frame, text="Stop", command=self.stop_minecraft, state=tk.DISABLED, width=12
+        )
         self.btn_stop.pack(side=tk.LEFT, padx=5)
 
-        self.btn_restart = ttk.Button(control_frame, text="Restart", command=self.restart_minecraft,
-                                      state=tk.DISABLED, width=12)
+        self.btn_restart = ttk.Button(
+            control_frame,
+            text="Restart",
+            command=self.restart_minecraft,
+            state=tk.DISABLED,
+            width=12,
+        )
         self.btn_restart.pack(side=tk.LEFT, padx=5)
 
-        self.btn_doctor = ttk.Button(control_frame, text="Doctor", command=self.run_doctor, width=12)
+        self.btn_doctor = ttk.Button(
+            control_frame, text="Doctor", command=self.run_doctor, width=12
+        )
         self.btn_doctor.pack(side=tk.LEFT, padx=5)
 
-        self.btn_save = ttk.Button(control_frame, text="Save Config", command=self.save_configuration, width=12)
+        self.btn_save = ttk.Button(
+            control_frame, text="Save Config", command=self.save_configuration, width=12
+        )
         self.btn_save.pack(side=tk.LEFT, padx=5)
 
-        self.btn_edit = ttk.Button(control_frame, text="Edit Config", command=self.edit_configuration, width=12)
+        self.btn_edit = ttk.Button(
+            control_frame, text="Edit Config", command=self.edit_configuration, width=12
+        )
         self.btn_edit.pack(side=tk.LEFT, padx=5)
 
         # Make left_frame columns expand properly
@@ -257,10 +326,12 @@ class MinecraftLauncherGUI:
         status_frame = ttk.Frame(left_frame)
         status_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
 
-        self.status_label = ttk.Label(status_frame,
-                                      text="● Ready",
-                                      font=('Segoe UI', 11, 'bold'),
-                                      foreground=self.colors['success'])
+        self.status_label = ttk.Label(
+            status_frame,
+            text="● Ready",
+            font=("Segoe UI", 11, "bold"),
+            foreground=self.colors["success"],
+        )
         self.status_label.pack(side=tk.LEFT)
 
         # Log Output Frame with better styling
@@ -270,16 +341,18 @@ class MinecraftLauncherGUI:
         log_frame.rowconfigure(0, weight=1)
 
         # Styled scrolled text with dark theme
-        self.log_text = scrolledtext.ScrolledText(log_frame,
-                                                  height=20,
-                                                  wrap=tk.WORD,
-                                                  bg='#1e1e1e',
-                                                  fg='#d4d4d4',
-                                                  insertbackground='#7cbd3f',
-                                                  selectbackground='#3d3d3d',
-                                                  font=('Consolas', 9),
-                                                  relief=tk.FLAT,
-                                                  borderwidth=0)
+        self.log_text = scrolledtext.ScrolledText(
+            log_frame,
+            height=20,
+            wrap=tk.WORD,
+            bg="#1e1e1e",
+            fg="#d4d4d4",
+            insertbackground="#7cbd3f",
+            selectbackground="#3d3d3d",
+            font=("Consolas", 9),
+            relief=tk.FLAT,
+            borderwidth=0,
+        )
         self.log_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=2, pady=2)
 
         # Log buttons in a frame so they stay visible and aren't cut off
@@ -303,8 +376,9 @@ class MinecraftLauncherGUI:
         parent_frame.columnconfigure(0, weight=1)
 
         # Toggle button (smaller)
-        self.btn_monitor_toggle = ttk.Button(monitor_frame, text="Enable Monitor",
-                                             command=self.toggle_monitor, width=16)
+        self.btn_monitor_toggle = ttk.Button(
+            monitor_frame, text="Enable Monitor", command=self.toggle_monitor, width=16
+        )
         self.btn_monitor_toggle.pack(pady=(0, 8))
 
         # Stats display with proper grid configuration
@@ -316,43 +390,54 @@ class MinecraftLauncherGUI:
         stats_frame.columnconfigure(1, weight=1)  # Value column (expands)
 
         # CPU
-        ttk.Label(stats_frame, text="CPU:", font=('Segoe UI', 9, 'bold')).grid(
-            row=0, column=0, sticky=tk.W, pady=4)
-        self.cpu_label = ttk.Label(stats_frame, text="--",
-                                   font=('Consolas', 8), foreground=self.colors['info'])
+        ttk.Label(stats_frame, text="CPU:", font=("Segoe UI", 9, "bold")).grid(
+            row=0, column=0, sticky=tk.W, pady=4
+        )
+        self.cpu_label = ttk.Label(
+            stats_frame, text="--", font=("Consolas", 8), foreground=self.colors["info"]
+        )
         self.cpu_label.grid(row=0, column=1, sticky=tk.W, padx=(5, 0))
 
         # Memory
-        ttk.Label(stats_frame, text="RAM:", font=('Segoe UI', 9, 'bold')).grid(
-            row=1, column=0, sticky=tk.W, pady=4)
-        self.mem_label = ttk.Label(stats_frame, text="--",
-                                   font=('Consolas', 8), foreground=self.colors['info'])
+        ttk.Label(stats_frame, text="RAM:", font=("Segoe UI", 9, "bold")).grid(
+            row=1, column=0, sticky=tk.W, pady=4
+        )
+        self.mem_label = ttk.Label(
+            stats_frame, text="--", font=("Consolas", 8), foreground=self.colors["info"]
+        )
         self.mem_label.grid(row=1, column=1, sticky=tk.W, padx=(5, 0))
 
         # I/O Read
-        ttk.Label(stats_frame, text="Net In:", font=('Segoe UI', 9, 'bold')).grid(
-            row=2, column=0, sticky=tk.W, pady=4)
-        self.io_read_label = ttk.Label(stats_frame, text="--",
-                                       font=('Consolas', 8), foreground=self.colors['info'])
+        ttk.Label(stats_frame, text="Net In:", font=("Segoe UI", 9, "bold")).grid(
+            row=2, column=0, sticky=tk.W, pady=4
+        )
+        self.io_read_label = ttk.Label(
+            stats_frame, text="--", font=("Consolas", 8), foreground=self.colors["info"]
+        )
         self.io_read_label.grid(row=2, column=1, sticky=tk.W, padx=(5, 0))
 
         # I/O Write
-        ttk.Label(stats_frame, text="Net Out:", font=('Segoe UI', 9, 'bold')).grid(
-            row=3, column=0, sticky=tk.W, pady=4)
-        self.io_write_label = ttk.Label(stats_frame, text="--",
-                                        font=('Consolas', 8), foreground=self.colors['info'])
+        ttk.Label(stats_frame, text="Net Out:", font=("Segoe UI", 9, "bold")).grid(
+            row=3, column=0, sticky=tk.W, pady=4
+        )
+        self.io_write_label = ttk.Label(
+            stats_frame, text="--", font=("Consolas", 8), foreground=self.colors["info"]
+        )
         self.io_write_label.grid(row=3, column=1, sticky=tk.W, padx=(5, 0))
 
         # GPU (if available)
-        ttk.Label(stats_frame, text="GPU:", font=('Segoe UI', 9, 'bold')).grid(
-            row=4, column=0, sticky=tk.W, pady=4)
-        self.gpu_label = ttk.Label(stats_frame, text="--",
-                                   font=('Consolas', 8), foreground=self.colors['info'])
+        ttk.Label(stats_frame, text="GPU:", font=("Segoe UI", 9, "bold")).grid(
+            row=4, column=0, sticky=tk.W, pady=4
+        )
+        self.gpu_label = ttk.Label(
+            stats_frame, text="--", font=("Consolas", 8), foreground=self.colors["info"]
+        )
         self.gpu_label.grid(row=4, column=1, sticky=tk.W, padx=(5, 0))
 
         # Status
-        self.monitor_status = ttk.Label(monitor_frame, text="Monitor disabled",
-                                       font=('Segoe UI', 8), foreground='gray')
+        self.monitor_status = ttk.Label(
+            monitor_frame, text="Monitor disabled", font=("Segoe UI", 8), foreground="gray"
+        )
         self.monitor_status.pack(pady=(8, 0))
 
     def toggle_monitor(self):
@@ -361,11 +446,11 @@ class MinecraftLauncherGUI:
 
         if self._monitor_enabled:
             self.btn_monitor_toggle.config(text="Disable Monitor")
-            self.monitor_status.config(text="Monitoring active", foreground=self.colors['success'])
+            self.monitor_status.config(text="Monitoring active", foreground=self.colors["success"])
             self._update_resource_stats()
         else:
             self.btn_monitor_toggle.config(text="Enable Monitor")
-            self.monitor_status.config(text="Monitor disabled", foreground='gray')
+            self.monitor_status.config(text="Monitor disabled", foreground="gray")
             if self._monitor_job:
                 self.window.after_cancel(self._monitor_job)
                 self._monitor_job = None
@@ -382,29 +467,37 @@ class MinecraftLauncherGUI:
             return
 
         try:
-            import subprocess
             import re
+            import subprocess
 
             # Get container configuration
             config = self._gather_config()
-            runtime = config.get('runtime', 'podman')
+            runtime = config.get("runtime", "podman")
             container_name = "tlauncher"
 
             try:
                 # Get container stats (one-shot, no stream)
                 result = subprocess.run(
-                    [runtime, 'stats', '--no-stream', '--format',
-                     'json' if runtime == 'podman' else 'table',
-                     container_name],
-                    capture_output=True, text=True, timeout=3
+                    [
+                        runtime,
+                        "stats",
+                        "--no-stream",
+                        "--format",
+                        "json" if runtime == "podman" else "table",
+                        container_name,
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=3,
                 )
 
                 if result.returncode == 0 and result.stdout.strip():
                     output = result.stdout.strip()
 
-                    if runtime == 'podman':
+                    if runtime == "podman":
                         # Podman outputs JSON array with one object
                         import json
+
                         stats_list = json.loads(output)
 
                         # Get first (and only) container stats
@@ -415,23 +508,25 @@ class MinecraftLauncherGUI:
 
                         # CPU % (Podman uses 'cpu_percent' not 'CPU')
                         # Container stats show per-core usage, normalize to total system CPU
-                        cpu_raw = stats.get('cpu_percent', '0%').replace('%', '')
+                        cpu_raw = stats.get("cpu_percent", "0%").replace("%", "")
                         try:
                             cpu_normalized = float(cpu_raw) / self._cpu_cores
                             cpu_cores = float(cpu_raw) / 100
-                            self.cpu_label.config(text=f"{cpu_normalized:.1f}%\n({cpu_cores:.1f} cores)")
+                            self.cpu_label.config(
+                                text=f"{cpu_normalized:.1f}%\n({cpu_cores:.1f} cores)"
+                            )
                         except (ValueError, ZeroDivisionError):
                             self.cpu_label.config(text=f"{cpu_raw}%")
 
                         # Memory (Podman uses 'mem_usage' not 'MemUsage')
-                        mem_usage = stats.get('mem_usage', '0B / 0B')
-                        mem_parts = mem_usage.split('/')
+                        mem_usage = stats.get("mem_usage", "0B / 0B")
+                        mem_parts = mem_usage.split("/")
                         if mem_parts:
                             self.mem_label.config(text=mem_parts[0].strip())
 
                         # Network I/O (Podman uses 'net_io' not 'NetIO')
-                        net_io = stats.get('net_io', '0B / 0B')
-                        net_parts = net_io.split('/')
+                        net_io = stats.get("net_io", "0B / 0B")
+                        net_parts = net_io.split("/")
                         if len(net_parts) == 2:
                             self.io_read_label.config(text=net_parts[0].strip())
                             self.io_write_label.config(text=net_parts[1].strip())
@@ -439,43 +534,50 @@ class MinecraftLauncherGUI:
                     else:
                         # Docker outputs table format
                         # Parse the output line (skip header if present)
-                        lines = output.split('\n')
+                        lines = output.split("\n")
                         data_line = lines[-1] if len(lines) > 0 else ""
 
                         # Format: CONTAINER ID   NAME   CPU %   MEM USAGE / LIMIT   MEM %   NET I/O   BLOCK I/O   PIDS
-                        parts = re.split(r'\s{2,}', data_line.strip())
+                        parts = re.split(r"\s{2,}", data_line.strip())
 
                         if len(parts) >= 3:
                             # CPU % (index 2)
                             # Container stats show per-core usage, normalize to total system CPU
-                            cpu_raw = parts[2].replace('%', '')
+                            cpu_raw = parts[2].replace("%", "")
                             try:
                                 cpu_normalized = float(cpu_raw) / self._cpu_cores
                                 cpu_cores = float(cpu_raw) / 100
-                                self.cpu_label.config(text=f"{cpu_normalized:.1f}%\n({cpu_cores:.1f} cores)")
+                                self.cpu_label.config(
+                                    text=f"{cpu_normalized:.1f}%\n({cpu_cores:.1f} cores)"
+                                )
                             except (ValueError, ZeroDivisionError):
                                 self.cpu_label.config(text=f"{cpu_raw}%")
 
                             # MEM USAGE (index 3)
                             if len(parts) >= 4:
-                                mem_usage = parts[3].split('/')[0].strip()
+                                mem_usage = parts[3].split("/")[0].strip()
                                 self.mem_label.config(text=mem_usage)
 
                             # NET I/O (index 5)
                             if len(parts) >= 6:
                                 net_io = parts[5]
-                                net_parts = net_io.split('/')
+                                net_parts = net_io.split("/")
                                 if len(net_parts) == 2:
                                     self.io_read_label.config(text=net_parts[0].strip())
                                     self.io_write_label.config(text=net_parts[1].strip())
 
                     # GPU stats (NVIDIA only)
                     try:
-                        if config.get('gpu') == 'nvidia':
+                        if config.get("gpu") == "nvidia":
                             gpu_result = subprocess.run(
-                                ['nvidia-smi', '--query-gpu=utilization.gpu',
-                                 '--format=csv,noheader,nounits'],
-                                capture_output=True, text=True, timeout=1
+                                [
+                                    "nvidia-smi",
+                                    "--query-gpu=utilization.gpu",
+                                    "--format=csv,noheader,nounits",
+                                ],
+                                capture_output=True,
+                                text=True,
+                                timeout=1,
                             )
                             if gpu_result.returncode == 0:
                                 gpu_util = gpu_result.stdout.strip()
@@ -491,7 +593,7 @@ class MinecraftLauncherGUI:
                     # Container not running or not found
                     self._reset_monitor_labels()
 
-            except (subprocess.TimeoutExpired, ValueError, json.JSONDecodeError) as e:
+            except (subprocess.TimeoutExpired, ValueError, json.JSONDecodeError):
                 self._reset_monitor_labels()
 
         except Exception as e:
@@ -521,7 +623,9 @@ class MinecraftLauncherGUI:
         btn_import = ttk.Button(btn_frame, text="📥 Import", command=self.import_profile, width=12)
         btn_import.pack(side=tk.LEFT, padx=(0, 5))
 
-        btn_refresh = ttk.Button(btn_frame, text="🔄 Refresh", command=self.refresh_profiles, width=12)
+        btn_refresh = ttk.Button(
+            btn_frame, text="🔄 Refresh", command=self.refresh_profiles, width=12
+        )
         btn_refresh.pack(side=tk.LEFT)
 
         # Profiles list with scrollbar
@@ -531,16 +635,18 @@ class MinecraftLauncherGUI:
         scrollbar = ttk.Scrollbar(list_frame)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        self.profiles_listbox = tk.Listbox(list_frame,
-                                           yscrollcommand=scrollbar.set,
-                                           bg='#1e1e1e',
-                                           fg='#d4d4d4',
-                                           selectbackground='#7cbd3f',
-                                           selectforeground='#1e1e1e',
-                                           font=('Segoe UI', 9),
-                                           height=8,
-                                           relief=tk.FLAT,
-                                           borderwidth=0)
+        self.profiles_listbox = tk.Listbox(
+            list_frame,
+            yscrollcommand=scrollbar.set,
+            bg="#1e1e1e",
+            fg="#d4d4d4",
+            selectbackground="#7cbd3f",
+            selectforeground="#1e1e1e",
+            font=("Segoe UI", 9),
+            height=8,
+            relief=tk.FLAT,
+            borderwidth=0,
+        )
         self.profiles_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.profiles_listbox.yview)
 
@@ -548,10 +654,14 @@ class MinecraftLauncherGUI:
         action_frame = ttk.Frame(profiles_frame)
         action_frame.pack(fill=tk.X, pady=(8, 0))
 
-        btn_export = ttk.Button(action_frame, text="📤 Export", command=self.export_profile, width=12)
+        btn_export = ttk.Button(
+            action_frame, text="📤 Export", command=self.export_profile, width=12
+        )
         btn_export.pack(side=tk.LEFT, padx=(0, 5))
 
-        btn_delete = ttk.Button(action_frame, text="🗑 Delete", command=self.delete_profile, width=12)
+        btn_delete = ttk.Button(
+            action_frame, text="🗑 Delete", command=self.delete_profile, width=12
+        )
         btn_delete.pack(side=tk.LEFT)
 
         # Load profiles
@@ -566,31 +676,36 @@ class MinecraftLauncherGUI:
 
         try:
             # Read launcher_profiles.json
-            profiles_file = Path(__file__).parent / 'home' / 'launcher_profiles.json'
+            profiles_file = Path(__file__).parent / "home" / "launcher_profiles.json"
             if not profiles_file.exists():
                 self.profiles_listbox.insert(tk.END, "(No profiles found)")
                 return
 
-            with open(profiles_file, 'r') as f:
+            with open(profiles_file) as f:
                 data = json.load(f)
 
-            profiles = data.get('profiles', {})
+            profiles = data.get("profiles", {})
             if not profiles:
                 self.profiles_listbox.insert(tk.END, "(No profiles found)")
                 return
 
             # Add profiles to list
             for profile_id, profile_data in profiles.items():
-                name = profile_data.get('name', profile_id)
-                version = profile_data.get('lastVersionId', 'unknown')
-                profile_type = profile_data.get('type', 'custom')
+                name = profile_data.get("name", profile_id)
+                version = profile_data.get("lastVersionId", "unknown")
+                profile_type = profile_data.get("type", "custom")
 
                 # Format: "MC02 (v1.21) [custom]"
                 display_text = f"{name} (v{version}) [{profile_type}]"
                 self.profiles_listbox.insert(tk.END, display_text)
 
                 # Store profile ID as metadata
-                self.profiles_listbox.itemconfig(tk.END, fg='#7cbd3f' if profile_data.get('name') == data.get('selectedProfile') else '#d4d4d4')
+                self.profiles_listbox.itemconfig(
+                    tk.END,
+                    fg="#7cbd3f"
+                    if profile_data.get("name") == data.get("selectedProfile")
+                    else "#d4d4d4",
+                )
 
         except Exception as e:
             self.log(f"Error loading profiles: {e}")
@@ -611,11 +726,11 @@ class MinecraftLauncherGUI:
 
         try:
             # Read launcher_profiles.json
-            profiles_file = Path(__file__).parent / 'home' / 'launcher_profiles.json'
-            with open(profiles_file, 'r') as f:
+            profiles_file = Path(__file__).parent / "home" / "launcher_profiles.json"
+            with open(profiles_file) as f:
                 data = json.load(f)
 
-            profiles = data.get('profiles', {})
+            profiles = data.get("profiles", {})
             profile_keys = list(profiles.keys())
             selected_idx = selection[0]
 
@@ -625,15 +740,15 @@ class MinecraftLauncherGUI:
 
             profile_id = profile_keys[selected_idx]
             profile_data = profiles[profile_id]
-            profile_name = profile_data.get('name', profile_id)
-            version_id = profile_data.get('lastVersionId', 'unknown')
+            profile_name = profile_data.get("name", profile_id)
+            version_id = profile_data.get("lastVersionId", "unknown")
 
             # Ask where to save
             default_filename = f"{profile_name}_{version_id}.mcprofile.zip"
             save_path = filedialog.asksaveasfilename(
                 defaultextension=".zip",
                 initialfile=default_filename,
-                filetypes=[("Minecraft Profile", "*.mcprofile.zip"), ("ZIP files", "*.zip")]
+                filetypes=[("Minecraft Profile", "*.mcprofile.zip"), ("ZIP files", "*.zip")],
             )
 
             if not save_path:
@@ -642,43 +757,45 @@ class MinecraftLauncherGUI:
             self.log(f"\n📤 Exporting profile: {profile_name}")
 
             # Create ZIP file
-            with zipfile.ZipFile(save_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            with zipfile.ZipFile(save_path, "w", zipfile.ZIP_DEFLATED) as zipf:
                 # Add metadata
                 metadata = {
-                    'profile_id': profile_id,
-                    'profile_data': profile_data,
-                    'version_id': version_id,
-                    'export_version': '1.0'
+                    "profile_id": profile_id,
+                    "profile_data": profile_data,
+                    "version_id": version_id,
+                    "export_version": "1.0",
                 }
-                zipf.writestr('profile_metadata.json', json.dumps(metadata, indent=2))
+                zipf.writestr("profile_metadata.json", json.dumps(metadata, indent=2))
 
                 # Add version files from home/versions/[version_id]/
-                version_dir = Path(__file__).parent / 'home' / 'versions' / version_id
+                version_dir = Path(__file__).parent / "home" / "versions" / version_id
                 if version_dir.exists():
-                    for file_path in version_dir.rglob('*'):
+                    for file_path in version_dir.rglob("*"):
                         if file_path.is_file():
                             arcname = f"version/{file_path.relative_to(version_dir)}"
                             zipf.write(file_path, arcname)
                             self.log(f"  + {arcname}")
 
                 # Add game data if custom gameDir
-                game_dir = profile_data.get('gameDir')
-                if game_dir and not game_dir.startswith('/home/app/.minecraft/versions'):
+                game_dir = profile_data.get("gameDir")
+                if game_dir and not game_dir.startswith("/home/app/.minecraft/versions"):
                     # Custom game directory - try to export it
                     # gameDir is container path, convert to host path
                     # /home/app/.minecraft/foo -> home/foo
-                    if game_dir.startswith('/home/app/.minecraft/'):
-                        relative_path = game_dir.replace('/home/app/.minecraft/', '')
-                        host_game_dir = Path(__file__).parent / 'home' / relative_path
+                    if game_dir.startswith("/home/app/.minecraft/"):
+                        relative_path = game_dir.replace("/home/app/.minecraft/", "")
+                        host_game_dir = Path(__file__).parent / "home" / relative_path
 
                         if host_game_dir.exists():
-                            for file_path in host_game_dir.rglob('*'):
+                            for file_path in host_game_dir.rglob("*"):
                                 if file_path.is_file():
                                     arcname = f"gamedata/{file_path.relative_to(host_game_dir)}"
                                     zipf.write(file_path, arcname)
 
             self.log(f"✓ Profile exported to: {save_path}")
-            messagebox.showinfo("Export Complete", f"Profile exported successfully to:\n{save_path}")
+            messagebox.showinfo(
+                "Export Complete", f"Profile exported successfully to:\n{save_path}"
+            )
 
         except Exception as e:
             self.log(f"✗ Export failed: {e}")
@@ -694,7 +811,11 @@ class MinecraftLauncherGUI:
         # Ask for ZIP file
         zip_path = filedialog.askopenfilename(
             title="Select Profile to Import",
-            filetypes=[("Minecraft Profile", "*.mcprofile.zip"), ("ZIP files", "*.zip"), ("All files", "*.*")]
+            filetypes=[
+                ("Minecraft Profile", "*.mcprofile.zip"),
+                ("ZIP files", "*.zip"),
+                ("All files", "*.*"),
+            ],
         )
 
         if not zip_path:
@@ -703,85 +824,90 @@ class MinecraftLauncherGUI:
         try:
             self.log(f"\n📥 Importing profile from: {Path(zip_path).name}")
 
-            with zipfile.ZipFile(zip_path, 'r') as zipf:
+            with zipfile.ZipFile(zip_path, "r") as zipf:
                 # Read metadata
-                if 'profile_metadata.json' not in zipf.namelist():
-                    messagebox.showerror("Invalid Archive", "This is not a valid Minecraft profile archive.\nMissing profile_metadata.json")
+                if "profile_metadata.json" not in zipf.namelist():
+                    messagebox.showerror(
+                        "Invalid Archive",
+                        "This is not a valid Minecraft profile archive.\nMissing profile_metadata.json",
+                    )
                     return
 
-                metadata_content = zipf.read('profile_metadata.json').decode('utf-8')
+                metadata_content = zipf.read("profile_metadata.json").decode("utf-8")
                 metadata = json.loads(metadata_content)
 
-                profile_data = metadata.get('profile_data', {})
-                version_id = metadata.get('version_id', 'unknown')
-                profile_name = profile_data.get('name', 'Imported Profile')
+                profile_data = metadata.get("profile_data", {})
+                version_id = metadata.get("version_id", "unknown")
+                profile_name = profile_data.get("name", "Imported Profile")
 
                 self.log(f"  Profile: {profile_name}")
                 self.log(f"  Version: {version_id}")
 
                 # Extract version files
-                version_dir = Path(__file__).parent / 'home' / 'versions' / version_id
+                version_dir = Path(__file__).parent / "home" / "versions" / version_id
                 version_dir.mkdir(parents=True, exist_ok=True)
 
                 for item in zipf.namelist():
-                    if item.startswith('version/'):
-                        target_path = version_dir / item.replace('version/', '')
+                    if item.startswith("version/"):
+                        target_path = version_dir / item.replace("version/", "")
                         target_path.parent.mkdir(parents=True, exist_ok=True)
 
-                        with zipf.open(item) as source, open(target_path, 'wb') as target:
+                        with zipf.open(item) as source, open(target_path, "wb") as target:
                             target.write(source.read())
                         self.log(f"  + {item}")
 
                 # Extract game data if present
-                has_gamedata = any(item.startswith('gamedata/') for item in zipf.namelist())
+                has_gamedata = any(item.startswith("gamedata/") for item in zipf.namelist())
                 if has_gamedata:
                     game_dir = version_dir  # Place in same directory by default
                     for item in zipf.namelist():
-                        if item.startswith('gamedata/'):
-                            target_path = game_dir / item.replace('gamedata/', '')
+                        if item.startswith("gamedata/"):
+                            target_path = game_dir / item.replace("gamedata/", "")
                             target_path.parent.mkdir(parents=True, exist_ok=True)
 
-                            with zipf.open(item) as source, open(target_path, 'wb') as target:
+                            with zipf.open(item) as source, open(target_path, "wb") as target:
                                 target.write(source.read())
 
                 # Update launcher_profiles.json
-                profiles_file = Path(__file__).parent / 'home' / 'launcher_profiles.json'
+                profiles_file = Path(__file__).parent / "home" / "launcher_profiles.json"
 
                 if profiles_file.exists():
-                    with open(profiles_file, 'r') as f:
+                    with open(profiles_file) as f:
                         launcher_data = json.load(f)
                 else:
-                    launcher_data = {'clientToken': 'imported', 'profiles': {}}
+                    launcher_data = {"clientToken": "imported", "profiles": {}}
 
                 # Generate unique profile ID if needed
-                base_id = profile_data.get('name', version_id).replace(' ', '_')
+                base_id = profile_data.get("name", version_id).replace(" ", "_")
                 profile_id = base_id
                 counter = 1
-                while profile_id in launcher_data.get('profiles', {}):
+                while profile_id in launcher_data.get("profiles", {}):
                     profile_id = f"{base_id}_{counter}"
                     counter += 1
 
                 # Add profile
                 new_profile = {
-                    'name': profile_data.get('name', version_id),
-                    'type': profile_data.get('type', 'custom'),
-                    'created': profile_data.get('created', '2024-01-01T00:00:00.000Z'),
-                    'lastUsed': profile_data.get('lastUsed', '2024-01-01T00:00:00.000Z'),
-                    'lastVersionId': version_id,
+                    "name": profile_data.get("name", version_id),
+                    "type": profile_data.get("type", "custom"),
+                    "created": profile_data.get("created", "2024-01-01T00:00:00.000Z"),
+                    "lastUsed": profile_data.get("lastUsed", "2024-01-01T00:00:00.000Z"),
+                    "lastVersionId": version_id,
                 }
 
                 # Add gameDir if it was custom
-                if profile_data.get('gameDir'):
-                    new_profile['gameDir'] = f"/home/app/.minecraft/versions/{version_id}"
+                if profile_data.get("gameDir"):
+                    new_profile["gameDir"] = f"/home/app/.minecraft/versions/{version_id}"
 
-                launcher_data.setdefault('profiles', {})[profile_id] = new_profile
+                launcher_data.setdefault("profiles", {})[profile_id] = new_profile
 
                 # Save
-                with open(profiles_file, 'w') as f:
+                with open(profiles_file, "w") as f:
                     json.dump(launcher_data, f, indent=2)
 
-            self.log(f"✓ Profile imported successfully!")
-            messagebox.showinfo("Import Complete", f"Profile '{profile_name}' imported successfully!")
+            self.log("✓ Profile imported successfully!")
+            messagebox.showinfo(
+                "Import Complete", f"Profile '{profile_name}' imported successfully!"
+            )
 
             # Refresh profiles list
             self.refresh_profiles()
@@ -804,11 +930,11 @@ class MinecraftLauncherGUI:
 
         try:
             # Read launcher_profiles.json
-            profiles_file = Path(__file__).parent / 'home' / 'launcher_profiles.json'
-            with open(profiles_file, 'r') as f:
+            profiles_file = Path(__file__).parent / "home" / "launcher_profiles.json"
+            with open(profiles_file) as f:
                 data = json.load(f)
 
-            profiles = data.get('profiles', {})
+            profiles = data.get("profiles", {})
             profile_keys = list(profiles.keys())
             selected_idx = selection[0]
 
@@ -818,13 +944,15 @@ class MinecraftLauncherGUI:
 
             profile_id = profile_keys[selected_idx]
             profile_data = profiles[profile_id]
-            profile_name = profile_data.get('name', profile_id)
+            profile_name = profile_data.get("name", profile_id)
 
             # Confirm deletion
-            confirm = messagebox.askyesno("Confirm Deletion",
-                                         f"Delete profile '{profile_name}'?\n\n"
-                                         f"This will remove the profile entry from TLauncher.\n"
-                                         f"Version files will NOT be deleted.")
+            confirm = messagebox.askyesno(
+                "Confirm Deletion",
+                f"Delete profile '{profile_name}'?\n\n"
+                f"This will remove the profile entry from TLauncher.\n"
+                f"Version files will NOT be deleted.",
+            )
 
             if not confirm:
                 return
@@ -833,15 +961,15 @@ class MinecraftLauncherGUI:
             del profiles[profile_id]
 
             # Update selected profile if needed
-            if data.get('selectedProfile') == profile_id:
+            if data.get("selectedProfile") == profile_id:
                 # Select first remaining profile or None
                 if profiles:
-                    data['selectedProfile'] = list(profiles.keys())[0]
+                    data["selectedProfile"] = list(profiles.keys())[0]
                 else:
-                    data['selectedProfile'] = None
+                    data["selectedProfile"] = None
 
             # Save
-            with open(profiles_file, 'w') as f:
+            with open(profiles_file, "w") as f:
                 json.dump(data, f, indent=2)
 
             self.log(f"\n🗑 Deleted profile: {profile_name}")
@@ -882,13 +1010,16 @@ class MinecraftLauncherGUI:
         """Check if the container is already running and update UI accordingly."""
         try:
             import subprocess
-            runtime = self.detected.get('runtime', 'podman')
+
+            runtime = self.detected.get("runtime", "podman")
             container_name = "tlauncher"
 
             # Check container status
             result = subprocess.run(
-                [runtime, 'ps', '--filter', f'name={container_name}', '--format', '{{.Names}}'],
-                capture_output=True, text=True, timeout=3
+                [runtime, "ps", "--filter", f"name={container_name}", "--format", "{{.Names}}"],
+                capture_output=True,
+                text=True,
+                timeout=3,
             )
 
             if result.returncode == 0 and container_name in result.stdout:
@@ -898,9 +1029,9 @@ class MinecraftLauncherGUI:
                 self._update_status("Already Running", "warning")
 
                 # Disable start button, enable stop button
-                self.btn_start.config(state='disabled')
-                self.btn_stop.config(state='normal')
-                self.btn_restart.config(state='normal')
+                self.btn_start.config(state="disabled")
+                self.btn_stop.config(state="normal")
+                self.btn_restart.config(state="normal")
 
                 # Create manager instance for the running container
                 self.manager = ContainerManager(self.config)
@@ -909,23 +1040,47 @@ class MinecraftLauncherGUI:
                 self.log("\n🚀 Ready to start!")
                 self._update_status("Ready", "success")
 
-        except Exception as e:
+        except Exception:
             # If check fails, assume not running
             self.log("\n🚀 Ready to start!")
             self._update_status("Ready", "success")
 
     def _update_ui_from_config(self):
         """Update UI dropdowns from current config."""
-        self.runtime_var.set('auto' if not self.config.get('runtime') or self.config['runtime'] == self.detected['runtime'] else self.config['runtime'])
-        self.gpu_var.set('auto' if not self.config.get('gpu') or self.config['gpu'] == self.detected['gpu'] else self.config['gpu'])
-        self.display_var.set('auto' if not self.config.get('display') or self.config['display'] == self.detected['display'] else self.config['display'])
-        self.audio_var.set('auto' if not self.config.get('audio') or self.config['audio'] == self.detected['audio'] else self.config['audio'])
+        self.runtime_var.set(
+            "auto"
+            if not self.config.get("runtime") or self.config["runtime"] == self.detected["runtime"]
+            else self.config["runtime"]
+        )
+        self.gpu_var.set(
+            "auto"
+            if not self.config.get("gpu") or self.config["gpu"] == self.detected["gpu"]
+            else self.config["gpu"]
+        )
+        self.display_var.set(
+            "auto"
+            if not self.config.get("display") or self.config["display"] == self.detected["display"]
+            else self.config["display"]
+        )
+        self.audio_var.set(
+            "auto"
+            if not self.config.get("audio") or self.config["audio"] == self.detected["audio"]
+            else self.config["audio"]
+        )
 
         # Show detected values only if different from 'auto'
-        self.runtime_status_label.config(text=f"({self.detected['runtime']})" if self.runtime_var.get() == 'auto' else "")
-        self.gpu_status_label.config(text=f"({self.detected['gpu']})" if self.gpu_var.get() == 'auto' else "")
-        self.display_status_label.config(text=f"({self.detected['display']})" if self.display_var.get() == 'auto' else "")
-        self.audio_status_label.config(text=f"({self.detected['audio']})" if self.audio_var.get() == 'auto' else "")
+        self.runtime_status_label.config(
+            text=f"({self.detected['runtime']})" if self.runtime_var.get() == "auto" else ""
+        )
+        self.gpu_status_label.config(
+            text=f"({self.detected['gpu']})" if self.gpu_var.get() == "auto" else ""
+        )
+        self.display_status_label.config(
+            text=f"({self.detected['display']})" if self.display_var.get() == "auto" else ""
+        )
+        self.audio_status_label.config(
+            text=f"({self.detected['audio']})" if self.audio_var.get() == "auto" else ""
+        )
 
     def _gather_config(self) -> Dict[str, str]:
         """Gather configuration from UI."""
@@ -936,11 +1091,11 @@ class MinecraftLauncherGUI:
 
         # Convert 'auto' back to detected values
         return {
-            'runtime': self.detected['runtime'] if runtime == 'auto' else runtime,
-            'gpu': self.detected['gpu'] if gpu == 'auto' else gpu,
-            'display': self.detected['display'] if display == 'auto' else display,
-            'audio': self.detected['audio'] if audio == 'auto' else audio,
-            'auto_xhost': True
+            "runtime": self.detected["runtime"] if runtime == "auto" else runtime,
+            "gpu": self.detected["gpu"] if gpu == "auto" else gpu,
+            "display": self.detected["display"] if display == "auto" else display,
+            "audio": self.detected["audio"] if audio == "auto" else audio,
+            "auto_xhost": True,
         }
 
     def start_minecraft(self):
@@ -948,15 +1103,20 @@ class MinecraftLauncherGUI:
         # Check if already running
         try:
             import subprocess
-            runtime = self.detected.get('runtime', 'podman')
+
+            runtime = self.detected.get("runtime", "podman")
             result = subprocess.run(
-                [runtime, 'ps', '--filter', 'name=tlauncher', '--format', '{{.Names}}'],
-                capture_output=True, text=True, timeout=3
+                [runtime, "ps", "--filter", "name=tlauncher", "--format", "{{.Names}}"],
+                capture_output=True,
+                text=True,
+                timeout=3,
             )
-            if result.returncode == 0 and 'tlauncher' in result.stdout:
+            if result.returncode == 0 and "tlauncher" in result.stdout:
                 self.log("\n⚠️  Container is already running!")
-                messagebox.showinfo("Already Running",
-                                   "Minecraft container is already running.\nUse Stop to stop it first.")
+                messagebox.showinfo(
+                    "Already Running",
+                    "Minecraft container is already running.\nUse Stop to stop it first.",
+                )
                 return
         except Exception:
             pass  # If check fails, continue with start
@@ -964,7 +1124,7 @@ class MinecraftLauncherGUI:
         config = self._gather_config()
 
         # Validate
-        self.log("\n" + "="*50)
+        self.log("\n" + "=" * 50)
         self.log("Validating system...")
         valid, issues = validate_system(config)
 
@@ -978,14 +1138,15 @@ class MinecraftLauncherGUI:
         if not valid:
             self.log("\n✗ Validation failed. Cannot start.")
             self._update_status("Validation failed", "error")
-            messagebox.showerror("Validation Failed",
-                                "System validation failed. Check the output for details.")
+            messagebox.showerror(
+                "Validation Failed", "System validation failed. Check the output for details."
+            )
             return
 
         self.log("✓ Validation passed")
 
         # Run xhost if needed
-        if config['display'] == 'x11' and config.get('auto_xhost', True):
+        if config["display"] == "x11" and config.get("auto_xhost", True):
             self.log("Setting X11 permissions...")
             if run_xhost_if_needed(config):
                 self.log("✓ X11 permissions set")
@@ -1032,17 +1193,20 @@ class MinecraftLauncherGUI:
 
             self.window.after(0, _on_exited)
 
-        start_container_async(config, detached=False,
-                              output_callback=output_callback,
-                              started_callback=started_callback,
-                              completion_callback=completion_callback)
+        start_container_async(
+            config,
+            detached=False,
+            output_callback=output_callback,
+            started_callback=started_callback,
+            completion_callback=completion_callback,
+        )
 
     def stop_minecraft(self):
         """Stop button handler."""
         config = self._gather_config()
 
         self._user_requested_stop = True
-        self.log("\n" + "="*50)
+        self.log("\n" + "=" * 50)
         self.log("Stopping container...")
         self._update_status("Stopping...", "warning")
 
@@ -1070,7 +1234,7 @@ class MinecraftLauncherGUI:
         """Restart button handler."""
         config = self._gather_config()
 
-        self.log("\n" + "="*50)
+        self.log("\n" + "=" * 50)
         self.log("Restarting container...")
         self._update_status("Restarting...", "warning")
 
@@ -1093,22 +1257,22 @@ class MinecraftLauncherGUI:
 
     def run_doctor(self):
         """Doctor button handler - run validation."""
-        self.log("\n" + "="*50)
+        self.log("\n" + "=" * 50)
         self.log("Running system diagnostics...\n")
 
         details = get_detection_details()
 
         # Show detection details
-        rt = details['runtime']
+        rt = details["runtime"]
         self.log(f"Runtime: {rt['value']} ({rt['path']})")
 
-        gpu = details['gpu']
+        gpu = details["gpu"]
         self.log(f"GPU: {gpu['details']}")
 
-        disp = details['display']
+        disp = details["display"]
         self.log(f"Display: {disp['value']} (session: {disp['session_type']})")
 
-        aud = details['audio']
+        aud = details["audio"]
         self.log(f"Audio: {aud['details']}")
 
         # Validate
@@ -1130,7 +1294,9 @@ class MinecraftLauncherGUI:
             messagebox.showinfo("System Check", "System is ready to run Minecraft!")
         else:
             self.log("\n✗ System has errors")
-            messagebox.showwarning("System Check", "System has validation errors. Check the output for details.")
+            messagebox.showwarning(
+                "System Check", "System has validation errors. Check the output for details."
+            )
 
     def save_configuration(self):
         """Save current configuration."""
@@ -1138,11 +1304,11 @@ class MinecraftLauncherGUI:
 
         # Save with 'auto' converted to empty strings
         save_data = {
-            'runtime': '' if self.runtime_var.get() == 'auto' else config['runtime'],
-            'gpu': '' if self.gpu_var.get() == 'auto' else config['gpu'],
-            'display': '' if self.display_var.get() == 'auto' else config['display'],
-            'audio': '' if self.audio_var.get() == 'auto' else config['audio'],
-            'auto_xhost': True
+            "runtime": "" if self.runtime_var.get() == "auto" else config["runtime"],
+            "gpu": "" if self.gpu_var.get() == "auto" else config["gpu"],
+            "display": "" if self.display_var.get() == "auto" else config["display"],
+            "audio": "" if self.audio_var.get() == "auto" else config["audio"],
+            "auto_xhost": True,
         }
 
         if save_config(save_data):
@@ -1154,45 +1320,53 @@ class MinecraftLauncherGUI:
 
     def edit_configuration(self):
         """Open configuration file in text editor."""
-        import subprocess
         import os
+        import subprocess
         from pathlib import Path
 
         # Get config file path
-        config_dir = Path.home() / '.config' / 'minecraft-launcher'
-        config_file = config_dir / 'config.yaml'
+        config_dir = Path.home() / ".config" / "minecraft-launcher"
+        config_file = config_dir / "config.yaml"
 
         # Create config directory if it doesn't exist
         config_dir.mkdir(parents=True, exist_ok=True)
 
         # Create empty config file if it doesn't exist
         if not config_file.exists():
-            config_file.write_text("# Minecraft Launcher Launcher Configuration\n# Leave values empty to use auto-detection\n\nruntime: ''\ngpu: ''\ndisplay: ''\naudio: ''\nauto_xhost: true\n")
+            config_file.write_text(
+                "# Minecraft Launcher Launcher Configuration\n# Leave values empty to use auto-detection\n\nruntime: ''\ngpu: ''\ndisplay: ''\naudio: ''\nauto_xhost: true\n"
+            )
             self.log("\n✓ Created new config file")
 
         # Open in default text editor
         try:
-            if os.name == 'posix':  # Linux/Unix
-                subprocess.Popen(['xdg-open', str(config_file)])
-            elif os.name == 'nt':  # Windows
+            if os.name == "posix":  # Linux/Unix
+                subprocess.Popen(["xdg-open", str(config_file)])
+            elif os.name == "nt":  # Windows
                 os.startfile(str(config_file))
             else:
                 messagebox.showinfo("Config Location", f"Config file location:\n{config_file}")
                 return
 
             self.log(f"\n✓ Opening config file: {config_file}")
-            messagebox.showinfo("Config Editor", f"Opening config file in your default editor:\n{config_file}\n\nEdit and save the file, then restart the launcher to apply changes.")
+            messagebox.showinfo(
+                "Config Editor",
+                f"Opening config file in your default editor:\n{config_file}\n\nEdit and save the file, then restart the launcher to apply changes.",
+            )
         except Exception as e:
             self.log(f"\n✗ Failed to open config file: {e}")
-            messagebox.showerror("Failed to Open", f"Could not open config file.\nLocation: {config_file}\n\nError: {e}")
+            messagebox.showerror(
+                "Failed to Open",
+                f"Could not open config file.\nLocation: {config_file}\n\nError: {e}",
+            )
 
     def clear_logs(self):
         """Clear the log output."""
-        self.log_text.delete('1.0', tk.END)
+        self.log_text.delete("1.0", tk.END)
 
     def copy_logs(self):
         """Copy full log content to the clipboard."""
-        content = self.log_text.get('1.0', tk.END)
+        content = self.log_text.get("1.0", tk.END)
         if content.strip():
             self.window.clipboard_clear()
             self.window.clipboard_append(content)
@@ -1201,7 +1375,7 @@ class MinecraftLauncherGUI:
 
     def log(self, message: str):
         """Append message to log output."""
-        self.log_text.insert(tk.END, message + '\n')
+        self.log_text.insert(tk.END, message + "\n")
         self.log_text.see(tk.END)
         self.log_text.update()
 
@@ -1209,27 +1383,27 @@ class MinecraftLauncherGUI:
         """Update status label with colored indicator."""
         # Map color names to actual colors
         color_map = {
-            'success': self.colors['success'],
-            'green': self.colors['success'],
-            'warning': self.colors['warning'],
-            'orange': self.colors['warning'],
-            'error': self.colors['error'],
-            'red': self.colors['error'],
-            'info': self.colors['info'],
-            'gray': '#888888',
-            'black': self.colors['fg']
+            "success": self.colors["success"],
+            "green": self.colors["success"],
+            "warning": self.colors["warning"],
+            "orange": self.colors["warning"],
+            "error": self.colors["error"],
+            "red": self.colors["error"],
+            "info": self.colors["info"],
+            "gray": "#888888",
+            "black": self.colors["fg"],
         }
 
         actual_color = color_map.get(color, color)
 
         # Add status indicator dot
-        if 'Running' in text:
+        if "Running" in text:
             status_text = "● " + text.replace("Status: ", "")
-        elif 'Starting' in text or 'Stopping' in text or 'Restarting' in text:
+        elif "Starting" in text or "Stopping" in text or "Restarting" in text:
             status_text = "◐ " + text.replace("Status: ", "")
-        elif 'Stopped' in text or 'Ready' in text:
+        elif "Stopped" in text or "Ready" in text:
             status_text = "○ " + text.replace("Status: ", "")
-        elif 'Failed' in text or 'Error' in text:
+        elif "Failed" in text or "Error" in text:
             status_text = "✗ " + text.replace("Status: ", "")
         else:
             status_text = "● " + text.replace("Status: ", "")

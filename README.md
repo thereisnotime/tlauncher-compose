@@ -413,6 +413,41 @@ Want to help? These areas need testing and feedback:
 - **[WRAPPER-STRUCTURE.md](WRAPPER-STRUCTURE.md)** - Launcher architecture and code structure
 - **[TLAUNCHER-STRUCTURE.md](TLAUNCHER-STRUCTURE.md)** - Minecraft data organization
 
+#### Development Workflow
+
+```bash
+# Install development dependencies (includes ruff linter/formatter)
+make install-dev
+
+# Format code
+make format
+
+# Check formatting without modifying files
+make format-check
+
+# Run linter
+make lint
+
+# Run linter with auto-fix
+make lint-fix
+
+# Run tests (Python syntax validation)
+make test
+
+# Build container image
+make build         # Docker
+make build-podman  # Podman
+
+# Run all CI checks locally
+make ci
+
+# Clean up cache files
+make clean
+
+# Show all available targets
+make help
+```
+
 ---
 
 ## Troubleshooting

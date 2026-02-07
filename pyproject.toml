@@ -1,0 +1,142 @@
+[project]
+name = "minecraft-launcher-launcher"
+version = "1.0.0"
+description = "A launcher for TLauncher - Run Minecraft in a containerized environment"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "MIT"}
+authors = [
+    {name = "Minecraft Launcher Contributors"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Games/Entertainment",
+]
+
+dependencies = [
+    "PyYAML>=5.4",
+]
+
+[project.optional-dependencies]
+cli = [
+    "rich>=10.0.0",
+    "questionary>=1.10.0",
+]
+dev = [
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/thereisnotime/tlauncher-launcher"
+Repository = "https://github.com/thereisnotime/tlauncher-launcher"
+Issues = "https://github.com/thereisnotime/tlauncher-launcher/issues"
+
+[project.scripts]
+minecraft-launcher = "minecraft:main"
+
+[tool.ruff]
+# Target Python 3.7+ for compatibility
+target-version = "py37"
+
+# Line length (default: 88, matching Black)
+line-length = 100
+
+# Exclude common directories
+exclude = [
+    ".git",
+    ".github",
+    ".ruff_cache",
+    "__pycache__",
+    "*.egg-info",
+    "build",
+    "dist",
+    "venv",
+    ".venv",
+    "home",
+    "launcher",
+    "tlauncher-data",
+]
+
+[tool.ruff.lint]
+# Enable pycodestyle (E), pyflakes (F), isort (I), and others
+select = [
+    "E",      # pycodestyle errors
+    "F",      # pyflakes
+    "W",      # pycodestyle warnings
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "SIM",    # flake8-simplify
+    "PIE",    # flake8-pie
+    "RET",    # flake8-return
+    "PTH",    # flake8-use-pathlib
+]
+
+# Ignore specific rules
+ignore = [
+    "E501",   # Line too long (handled by formatter)
+    "B008",   # Do not perform function call in argument defaults
+    "N812",   # Lowercase imported as non lowercase
+    "SIM105", # Use contextlib.suppress instead of try-except-pass
+    "SIM102", # Use single if instead of nested (stylistic preference)
+    "PTH123", # Use Path.open() instead of open() (nice-to-have, not critical)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore import order issues in __init__.py
+"__init__.py" = ["F401", "F403"]
+
+[tool.ruff.format]
+# Use double quotes for strings
+quote-style = "double"
+
+# Indent with 4 spaces
+indent-style = "space"
+
+# Respect magic trailing comma
+skip-magic-trailing-comma = false
+
+# Format docstrings
+docstring-code-format = true
+
+[tool.mypy]
+python_version = "3.7"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+# Ignore missing imports for third-party libraries
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tkinter.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "questionary.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "rich.*"
+ignore_missing_imports = true

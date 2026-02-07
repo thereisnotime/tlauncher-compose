@@ -1,0 +1,21 @@
+# Development dependencies for Minecraft Launcher Launcher
+#
+# Install with: pip3 install -r requirements-dev.txt
+#
+
+# Include runtime dependencies
+-r requirements.txt
+
+# Linting and formatting
+ruff>=0.1.0            # Fast Python linter and formatter (replaces flake8, black, isort)
+
+# Type checking
+mypy>=1.0.0            # Static type checker
+
+# Testing (optional, for future test suite)
+# pytest>=7.0.0
+# pytest-cov>=4.0.0
+
+# Documentation
+# sphinx>=5.0.0
+# sphinx-rtd-theme>=1.0.0

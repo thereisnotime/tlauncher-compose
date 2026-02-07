@@ -2,9 +2,11 @@
 Container management module for Minecraft Launcher.
 Handles starting, stopping, and monitoring containers.
 """
+
 import subprocess
 import threading
-from typing import Dict, Optional, Callable, Iterator
+from typing import Callable, Dict, Iterator, Optional
+
 from .composer import build_compose_command
 
 
@@ -23,11 +25,15 @@ class ContainerManager:
         self._stop_requested = False
 
     # Log line patterns that indicate TLauncher has finished loading (GUI is up)
-    _STARTED_PATTERNS = ('[Loading] SUCCESS', 'Started!')
+    _STARTED_PATTERNS = ("[Loading] SUCCESS", "Started!")
 
-    def start(self, detached: bool = False, force_recreate: bool = False,
-              output_callback: Callable[[str], None] = None,
-              started_callback: Callable[[], None] = None) -> bool:
+    def start(
+        self,
+        detached: bool = False,
+        force_recreate: bool = False,
+        output_callback: Callable[[str], None] = None,
+        started_callback: Callable[[], None] = None,
+    ) -> bool:
         """
         Start the container.
 
@@ -42,46 +48,41 @@ class ContainerManager:
         """
         extra_args = []
         if detached:
-            extra_args.append('-d')
+            extra_args.append("-d")
         if force_recreate:
-            extra_args.append('--force-recreate')
+            extra_args.append("--force-recreate")
 
-        cmd = build_compose_command(self.config, 'up', extra_args)
+        cmd = build_compose_command(self.config, "up", extra_args)
 
         try:
             if detached:
                 # For detached mode, just run and return
                 result = subprocess.run(cmd, capture_output=True, text=True)
                 return result.returncode == 0
-            else:
-                # For interactive mode, stream output
-                self.process = subprocess.Popen(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    bufsize=1
-                )
+            # For interactive mode, stream output
+            self.process = subprocess.Popen(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
+            )
 
-                started_signaled = False
+            started_signaled = False
 
-                # Stream output lines
-                if output_callback:
-                    for line in iter(self.process.stdout.readline, ''):
-                        if line:
-                            stripped = line.rstrip()
-                            output_callback(stripped)
-                            # Signal "Running" once we see TLauncher has started
-                            if started_callback and not started_signaled:
-                                if any(p in stripped for p in self._STARTED_PATTERNS):
-                                    started_signaled = True
-                                    started_callback()
-                        if self._stop_requested:
-                            break
+            # Stream output lines
+            if output_callback:
+                for line in iter(self.process.stdout.readline, ""):
+                    if line:
+                        stripped = line.rstrip()
+                        output_callback(stripped)
+                        # Signal "Running" once we see TLauncher has started
+                        if started_callback and not started_signaled:
+                            if any(p in stripped for p in self._STARTED_PATTERNS):
+                                started_signaled = True
+                                started_callback()
+                    if self._stop_requested:
+                        break
 
-                # Wait for process to complete
-                self.process.wait()
-                return self.process.returncode == 0
+            # Wait for process to complete
+            self.process.wait()
+            return self.process.returncode == 0
 
         except Exception as e:
             if output_callback:
@@ -105,10 +106,10 @@ class ContainerManager:
 
         try:
             # Stop with short timeout so we don't hang on unresponsive Java process
-            stop_cmd = build_compose_command(self.config, 'stop', ['-t', str(stop_timeout)])
+            stop_cmd = build_compose_command(self.config, "stop", ["-t", str(stop_timeout)])
             subprocess.run(stop_cmd, capture_output=True, text=True, timeout=stop_timeout + 15)
             # Remove containers (already stopped, so this is quick)
-            down_cmd = build_compose_command(self.config, 'down')
+            down_cmd = build_compose_command(self.config, "down")
             result = subprocess.run(down_cmd, capture_output=True, text=True, timeout=15)
             return result.returncode == 0
         except subprocess.TimeoutExpired:
@@ -152,22 +153,18 @@ class ContainerManager:
         """
         extra_args = []
         if follow:
-            extra_args.append('-f')
+            extra_args.append("-f")
         if tail:
-            extra_args.extend(['--tail', str(tail)])
+            extra_args.extend(["--tail", str(tail)])
 
-        cmd = build_compose_command(self.config, 'logs', extra_args)
+        cmd = build_compose_command(self.config, "logs", extra_args)
 
         try:
             process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
             )
 
-            for line in iter(process.stdout.readline, ''):
+            for line in iter(process.stdout.readline, ""):
                 if line:
                     yield line.rstrip()
 
@@ -181,7 +178,7 @@ class ContainerManager:
         Returns:
             dict: Status information with keys: running, containers
         """
-        cmd = build_compose_command(self.config, 'ps', ['--format', 'json'])
+        cmd = build_compose_command(self.config, "ps", ["--format", "json"])
 
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
@@ -189,28 +186,15 @@ class ContainerManager:
             if result.returncode == 0:
                 # Parse output to determine if container is running
                 output = result.stdout.strip()
-                running = bool(output and 'tlauncher' in output.lower())
+                running = bool(output and "tlauncher" in output.lower())
 
-                return {
-                    'running': running,
-                    'output': output
-                }
-            else:
-                return {
-                    'running': False,
-                    'error': result.stderr
-                }
+                return {"running": running, "output": output}
+            return {"running": False, "error": result.stderr}
 
         except subprocess.TimeoutExpired:
-            return {
-                'running': False,
-                'error': 'Status check timed out'
-            }
+            return {"running": False, "error": "Status check timed out"}
         except Exception as e:
-            return {
-                'running': False,
-                'error': str(e)
-            }
+            return {"running": False, "error": str(e)}
 
     def is_running(self) -> bool:
         """
@@ -220,14 +204,16 @@ class ContainerManager:
             bool: True if running
         """
         status = self.status()
-        return status.get('running', False)
+        return status.get("running", False)
 
 
-def start_container_async(config: Dict[str, str],
-                           detached: bool = False,
-                           output_callback: Callable[[str], None] = None,
-                           started_callback: Callable[[], None] = None,
-                           completion_callback: Callable[[bool], None] = None):
+def start_container_async(
+    config: Dict[str, str],
+    detached: bool = False,
+    output_callback: Callable[[str], None] = None,
+    started_callback: Callable[[], None] = None,
+    completion_callback: Callable[[bool], None] = None,
+):
     """
     Start container in a background thread (for GUI).
 
@@ -238,12 +224,11 @@ def start_container_async(config: Dict[str, str],
         started_callback: Called once when launcher log shows startup success (GUI up)
         completion_callback: Called when the container process exits; argument is (returncode == 0)
     """
+
     def _worker():
         manager = ContainerManager(config)
         success = manager.start(
-            detached=detached,
-            output_callback=output_callback,
-            started_callback=started_callback
+            detached=detached, output_callback=output_callback, started_callback=started_callback
         )
         if completion_callback:
             completion_callback(success)

@@ -2,12 +2,14 @@
 Compose command builder for Minecraft Launcher.
 Constructs docker/podman compose commands with appropriate file combinations.
 """
-import os
+
 from pathlib import Path
 from typing import Dict, List
 
 
-def build_compose_command(config: Dict[str, str], action: str, extra_args: List[str] = None) -> List[str]:
+def build_compose_command(
+    config: Dict[str, str], action: str, extra_args: List[str] = None
+) -> List[str]:
     """
     Build compose command with correct file order.
 
@@ -24,19 +26,19 @@ def build_compose_command(config: Dict[str, str], action: str, extra_args: List[
 
     # Build list of compose files in correct order
     files = [
-        'compose.base.yaml',
-        f'compose.{config["runtime"]}.yaml',
-        f'compose.{config["gpu"]}.yaml',
-        f'compose.{config["display"]}.yaml',
-        f'compose.audio-{config["audio"]}.yaml'
+        "compose.base.yaml",
+        f"compose.{config['runtime']}.yaml",
+        f"compose.{config['gpu']}.yaml",
+        f"compose.{config['display']}.yaml",
+        f"compose.audio-{config['audio']}.yaml",
     ]
 
     # Start building command
-    cmd = [config['runtime'], 'compose']
+    cmd = [config["runtime"], "compose"]
 
     # Add compose files
     for f in files:
-        cmd.extend(['-f', str(compose_dir / f)])
+        cmd.extend(["-f", str(compose_dir / f)])
 
     # Add action
     cmd.append(action)
@@ -71,11 +73,11 @@ def get_compose_files(config: Dict[str, str]) -> List[str]:
         list: List of compose file names
     """
     return [
-        'compose.base.yaml',
-        f'compose.{config["runtime"]}.yaml',
-        f'compose.{config["gpu"]}.yaml',
-        f'compose.{config["display"]}.yaml',
-        f'compose.audio-{config["audio"]}.yaml'
+        "compose.base.yaml",
+        f"compose.{config['runtime']}.yaml",
+        f"compose.{config['gpu']}.yaml",
+        f"compose.{config['display']}.yaml",
+        f"compose.audio-{config['audio']}.yaml",
     ]
 
 
@@ -100,7 +102,7 @@ def validate_compose_files_exist(config: Dict[str, str]) -> tuple[bool, List[str
     return len(missing) == 0, missing
 
 
-def get_command_preview(config: Dict[str, str], action: str = 'up') -> str:
+def get_command_preview(config: Dict[str, str], action: str = "up") -> str:
     """
     Get human-readable preview of the command that will be run.
 
@@ -112,4 +114,4 @@ def get_command_preview(config: Dict[str, str], action: str = 'up') -> str:
         str: Command preview
     """
     cmd = build_compose_command(config, action)
-    return ' '.join(cmd)
+    return " ".join(cmd)
