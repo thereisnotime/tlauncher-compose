@@ -45,6 +45,10 @@ class MinecraftLauncherGUI:
         self._monitor_job = None
         self._container_pid = None
 
+        # Get CPU core count for normalizing stats
+        import os
+        self._cpu_cores = os.cpu_count() or 1
+
         self._create_widgets()
         self._detect_and_load()
 
@@ -388,8 +392,14 @@ class MinecraftLauncherGUI:
                             stats = stats_list if isinstance(stats_list, dict) else {}
 
                         # CPU % (Podman uses 'cpu_percent' not 'CPU')
-                        cpu = stats.get('cpu_percent', '0%').replace('%', '')
-                        self.cpu_label.config(text=f"{cpu}%")
+                        # Container stats show per-core usage, normalize to total system CPU
+                        cpu_raw = stats.get('cpu_percent', '0%').replace('%', '')
+                        try:
+                            cpu_normalized = float(cpu_raw) / self._cpu_cores
+                            cpu_cores = float(cpu_raw) / 100
+                            self.cpu_label.config(text=f"{cpu_normalized:.1f}% ({cpu_cores:.1f} cores)")
+                        except (ValueError, ZeroDivisionError):
+                            self.cpu_label.config(text=f"{cpu_raw}%")
 
                         # Memory (Podman uses 'mem_usage' not 'MemUsage')
                         mem_usage = stats.get('mem_usage', '0B / 0B')
@@ -415,8 +425,14 @@ class MinecraftLauncherGUI:
 
                         if len(parts) >= 3:
                             # CPU % (index 2)
-                            cpu = parts[2].replace('%', '')
-                            self.cpu_label.config(text=f"{cpu}%")
+                            # Container stats show per-core usage, normalize to total system CPU
+                            cpu_raw = parts[2].replace('%', '')
+                            try:
+                                cpu_normalized = float(cpu_raw) / self._cpu_cores
+                                cpu_cores = float(cpu_raw) / 100
+                                self.cpu_label.config(text=f"{cpu_normalized:.1f}% ({cpu_cores:.1f} cores)")
+                            except (ValueError, ZeroDivisionError):
+                                self.cpu_label.config(text=f"{cpu_raw}%")
 
                             # MEM USAGE (index 3)
                             if len(parts) >= 4:
