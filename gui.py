@@ -491,8 +491,45 @@ class MinecraftLauncherGUI:
         self.log(f"✓ GPU: {self.detected['gpu']}")
         self.log(f"✓ Display: {self.detected['display']}")
         self.log(f"✓ Audio: {self.detected['audio']}")
-        self.log("\n🚀 Ready to start!")
-        self._update_status("Ready", "success")
+
+        # Check if container is already running
+        self._check_existing_container()
+
+    def _check_existing_container(self):
+        """Check if the container is already running and update UI accordingly."""
+        try:
+            import subprocess
+            runtime = self.detected.get('runtime', 'podman')
+            container_name = "tlauncher"
+
+            # Check container status
+            result = subprocess.run(
+                [runtime, 'ps', '--filter', f'name={container_name}', '--format', '{{.Names}}'],
+                capture_output=True, text=True, timeout=3
+            )
+
+            if result.returncode == 0 and container_name in result.stdout:
+                # Container is already running
+                self.log("\n⚠️  Detected existing Minecraft instance!")
+                self.log("Container is already running.")
+                self._update_status("Already Running", "warning")
+
+                # Disable start button, enable stop button
+                self.btn_start.config(state='disabled')
+                self.btn_stop.config(state='normal')
+                self.btn_restart.config(state='normal')
+
+                # Create manager instance for the running container
+                self.manager = ContainerManager(self.config)
+            else:
+                # Container not running
+                self.log("\n🚀 Ready to start!")
+                self._update_status("Ready", "success")
+
+        except Exception as e:
+            # If check fails, assume not running
+            self.log("\n🚀 Ready to start!")
+            self._update_status("Ready", "success")
 
     def _update_ui_from_config(self):
         """Update UI dropdowns from current config."""
@@ -525,6 +562,22 @@ class MinecraftLauncherGUI:
 
     def start_minecraft(self):
         """Start button handler."""
+        # Check if already running
+        try:
+            import subprocess
+            runtime = self.detected.get('runtime', 'podman')
+            result = subprocess.run(
+                [runtime, 'ps', '--filter', 'name=tlauncher', '--format', '{{.Names}}'],
+                capture_output=True, text=True, timeout=3
+            )
+            if result.returncode == 0 and 'tlauncher' in result.stdout:
+                self.log("\n⚠️  Container is already running!")
+                messagebox.showinfo("Already Running",
+                                   "Minecraft container is already running.\nUse Stop to stop it first.")
+                return
+        except Exception:
+            pass  # If check fails, continue with start
+
         config = self._gather_config()
 
         # Validate
