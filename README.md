@@ -571,6 +571,20 @@ A: Use the **Resource Monitor** in GUI or CLI:
 ./minecraft.py stats  # Shows live CPU, RAM, Network, GPU usage
 ```
 
+**Q: A mod fails to load with `FileWatcher$WatchingException: Failed to watch path`?**
+A: This happens when the system runs out of **inotify** instances. Forge mods use file watchers for config hot-reloading, and the default Linux limit (128 instances) is too low for heavily modded packs. Fix it by increasing the limit:
+
+```bash
+# Apply immediately (resets on reboot):
+sudo sysctl -w fs.inotify.max_user_instances=256
+
+# Make it permanent:
+echo 'fs.inotify.max_user_instances=256' | sudo tee /etc/sysctl.d/99-inotify.conf
+sudo sysctl --system
+```
+
+Then recreate the container and try again.
+
 **Q: What if I don't want the launcher wrapper?**
 A: Use compose commands directly - see [RUNBOOK-MANUAL.md](RUNBOOK-MANUAL.md)
 
